@@ -1,20 +1,17 @@
-# Place this at: .github/workflows/job-alerts.yml
 name: job-alerts
 
 on:
   schedule:
-    # Times are UTC. Minutes offset off the hour (:07/:22/:37/:52) because
-    # top-of-hour crons are the most congested and get delayed the most.
-    - cron: "7,22,37,52 13-23 * * *"   # ~every 15 min, peak US hiring hours
-    - cron: "7,37 0-12 * * *"          # ~every 30 min, off-peak
-  workflow_dispatch: {}                 # manual "Run workflow" button for testing
+    - cron: "7,22,37,52 13-23 * * *"
+    - cron: "7,37 0-12 * * *"
+  workflow_dispatch: {}
 
 concurrency:
   group: job-alerts
-  cancel-in-progress: false             # never run two copies at once
+  cancel-in-progress: false
 
 permissions:
-  contents: write                       # needed to commit seen.json back
+  contents: write
 
 jobs:
   poll:
