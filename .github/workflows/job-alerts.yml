@@ -1,0 +1,38 @@
+# Place this at: .github/workflows/job-alerts.yml
+name: job-alerts
+
+on:
+  schedule:
+    # Times are UTC. Minutes offset off the hour (:07/:22/:37/:52) because
+    # top-of-hour crons are the most congested and get delayed the most.
+    - cron: "7,22,37,52 13-23 * * *"   # ~every 15 min, peak US hiring hours
+    - cron: "7,37 0-12 * * *"          # ~every 30 min, off-peak
+  workflow_dispatch: {}                 # manual "Run workflow" button for testing
+
+concurrency:
+  group: job-alerts
+  cancel-in-progress: false             # never run two copies at once
+
+permissions:
+  contents: write                       # needed to commit seen.json back
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Run poller
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python job_alerts.py
+      - name: Persist state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen.json
+          git diff --cached --quiet || git commit -m "update seen.json [skip ci]"
+          git push
